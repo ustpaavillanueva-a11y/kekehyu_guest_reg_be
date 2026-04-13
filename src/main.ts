@@ -6,6 +6,18 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Root endpoint handler (before global prefix)
+  app.use('/', (req, res, next) => {
+    if (req.path === '/' && req.method === 'GET') {
+      return res.json({
+        status: 'ok',
+        message: 'Guest Registration API is running',
+        timestamp: new Date().toISOString(),
+      });
+    }
+    next();
+  });
+
   // Global prefix
   app.setGlobalPrefix('api');
 
