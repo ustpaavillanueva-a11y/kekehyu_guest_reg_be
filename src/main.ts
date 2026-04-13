@@ -33,14 +33,10 @@ async function bootstrap() {
     }),
   );
 
-  // CORS
+  // CORS - Allow all origins temporarily for debugging
   app.enableCors({
-    origin: [
-      'http://localhost:4200',
-      'http://localhost:3000',
-      'https://kekehyuguestregistration-59w34qijr.vercel.app',
-    ],
-    credentials: true,
+    origin: '*',
+    credentials: false,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
