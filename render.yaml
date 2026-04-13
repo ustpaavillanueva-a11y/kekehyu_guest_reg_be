@@ -3,10 +3,11 @@ services:
     name: guest-registration-api
     env: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production
+        startOnly: true
       - key: NODE_VERSION
         value: "18"
