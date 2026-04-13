@@ -41,7 +41,7 @@ import { RolesGuard } from './common/guards/roles.guard';
         ssl: configService.get('DB_SSL') === 'true' 
           ? { rejectUnauthorized: false }
           : false,
-        logging: configService.get('NODE_ENV') === 'development',
+        logging: false, // Set to true for SQL query debugging
       }),
     }),
 

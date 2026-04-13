@@ -13,10 +13,20 @@ import {
 } from 'class-validator';
 
 export class AccompanyingGuestDto {
-  @ApiProperty({ example: 'Juan Dela Cruz' })
+  @ApiProperty({ example: 'Juan' })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  firstName: string;
+
+  @ApiProperty({ example: 'Dela Cruz' })
+  @IsString()
+  @IsNotEmpty()
+  lastName: string;
+
+  @ApiPropertyOptional({ example: 'Santos' })
+  @IsString()
+  @IsOptional()
+  middleName?: string;
 
   @ApiProperty({ example: true })
   @IsBoolean()
@@ -149,10 +159,20 @@ export class GuestAgreementDto {
 }
 
 export class CreateGuestDto {
-  @ApiProperty({ example: 'Cherille Antonio' })
+  @ApiProperty({ example: 'Cherille' })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  firstName: string;
+
+  @ApiProperty({ example: 'Antonio' })
+  @IsString()
+  @IsNotEmpty()
+  lastName: string;
+
+  @ApiPropertyOptional({ example: 'Santos' })
+  @IsString()
+  @IsOptional()
+  middleName?: string;
 
   @ApiPropertyOptional({ example: '0917 826 8950' })
   @IsString()

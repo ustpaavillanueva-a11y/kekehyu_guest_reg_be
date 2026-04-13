@@ -58,7 +58,7 @@
 
 ## 📱 Sidebar Navigation per Role
 
-### Front Desk Sidebar (Minimal)
+### Front Desk UI (Minimal)
 ```
 ┌─────────────────────────┐
 │  🏨 Kekehyu Hotel       │
@@ -377,7 +377,9 @@ interface User {
 ```typescript
 interface Guest {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
   phoneNumber?: string;
   email?: string;
   country?: string;
@@ -411,7 +413,9 @@ interface Reservation {
 ```typescript
 interface AccompanyingGuest {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
   validIdPresented: boolean;
   signature?: string; // Base64
 }
@@ -506,7 +510,9 @@ interface UserSession {
 │ Step 1: GUEST INFORMATION                                   │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  Guest Name: [________________________]                     │
+│  First Name: [________________________]                     │
+│  Middle Name: [________________________] (Optional)         │
+│  Last Name: [________________________]                      │
 │  Phone Number: [________________________]                   │
 │  Email: [________________________]                          │
 │  Country: [________________________]                        │
@@ -530,8 +536,10 @@ interface UserSession {
 │  │ Check-out Date: [📅]  Time: [11:00]                    │ │
 │  │                                                        │ │
 │  │ Accompanying Guests: [+ Add Guest]                     │ │
-│  │   1. Name: [________] ID: [✓] Signature: [Draw]       │ │
-│  │   2. Name: [________] ID: [✓] Signature: [Draw]       │ │
+│  │   1. First: [____] Middle: [____] Last: [____] ID: [✓] │ │
+│  │      Signature: [Draw]                                 │ │
+│  │   2. First: [____] Middle: [____] Last: [____] ID: [✓] │ │
+│  │      Signature: [Draw]                                 │ │
 │  └────────────────────────────────────────────────────────┘ │
 │                                                             │
 │  ┌─── Room 2 ─────────────────────────────────────────────┐ │
@@ -611,7 +619,9 @@ interface UserSession {
 ### Create Guest API Request Body:
 ```json
 {
-  "name": "Cherille Antonio",
+  "firstName": "Cherille",
+  "lastName": "Antonio",
+  "middleName": "Santos",
   "phoneNumber": "0917 826 8950",
   "email": "cherille@email.com",
   "country": "Philippines",
@@ -628,12 +638,15 @@ interface UserSession {
       "checkOutTime": "11:00",
       "accompanyingGuests": [
         {
-          "name": "Juan Dela Cruz",
+          "firstName": "Juan",
+          "lastName": "Dela Cruz",
+          "middleName": "Santos",
           "validIdPresented": true,
           "signature": "data:image/png;base64,iVBORw0KG..."
         },
         {
-          "name": "Maria Santos",
+          "firstName": "Maria",
+          "lastName": "Santos",
           "validIdPresented": true,
           "signature": "data:image/png;base64,iVBORw0KG..."
         }
@@ -896,6 +909,7 @@ src/app/
 - Search bar
 - Period filter (today/week/month)
 - Columns: Name, Phone, Room(s), Check-in, Registered By, Actions
+  - Name = `${lastName}, ${firstName} ${middleName || ''}`
 - View/Edit/Delete buttons (based on role)
 - Pagination
 

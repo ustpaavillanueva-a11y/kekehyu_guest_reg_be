@@ -32,7 +32,9 @@ export class GuestsService {
   ): Promise<Guest> {
     // Create guest
     const guest = this.guestRepository.create({
-      name: createGuestDto.name,
+      firstName: createGuestDto.firstName,
+      lastName: createGuestDto.lastName,
+      middleName: createGuestDto.middleName,
       phoneNumber: createGuestDto.phoneNumber,
       email: createGuestDto.email,
       country: createGuestDto.country,
@@ -64,7 +66,9 @@ export class GuestsService {
         for (const agDto of resDto.accompanyingGuests) {
           const accompanyingGuest = this.accompanyingGuestRepository.create({
             reservationId: savedReservation.id,
-            name: agDto.name,
+            firstName: agDto.firstName,
+            lastName: agDto.lastName,
+            middleName: agDto.middleName,
             validIdPresented: agDto.validIdPresented,
             signature: agDto.signature,
           });

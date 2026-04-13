@@ -7,7 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Reservation } from './reservation.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity('accompanying_guests')
 export class AccompanyingGuest {
@@ -25,8 +25,16 @@ export class AccompanyingGuest {
   reservation: Reservation;
 
   @ApiProperty()
-  @Column({ length: 200 })
-  name: string;
+  @Column({ name: 'first_name', length: 100 })
+  firstName: string;
+
+  @ApiProperty()
+  @Column({ name: 'last_name', length: 100 })
+  lastName: string;
+
+  @ApiPropertyOptional()
+  @Column({ name: 'middle_name', length: 100, nullable: true })
+  middleName: string;
 
   @ApiProperty()
   @Column({ name: 'valid_id_presented', default: false })

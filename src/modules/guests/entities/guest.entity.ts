@@ -12,7 +12,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Reservation } from './reservation.entity';
 import { GuestAgreement } from './guest-agreement.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity('guests')
 export class Guest {
@@ -21,8 +21,16 @@ export class Guest {
   id: string;
 
   @ApiProperty()
-  @Column({ length: 200 })
-  name: string;
+  @Column({ name: 'first_name', length: 100 })
+  firstName: string;
+
+  @ApiProperty()
+  @Column({ name: 'last_name', length: 100 })
+  lastName: string;
+
+  @ApiPropertyOptional()
+  @Column({ name: 'middle_name', length: 100, nullable: true })
+  middleName: string;
 
   @ApiProperty()
   @Column({ name: 'phone_number', length: 20, nullable: true })
