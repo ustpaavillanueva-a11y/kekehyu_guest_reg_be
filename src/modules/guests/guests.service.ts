@@ -12,6 +12,7 @@ import { GuestAgreement } from './entities/guest-agreement.entity';
 import { CreateGuestDto } from './dto/create-guest.dto';
 import { UpdateGuestDto } from './dto/update-guest.dto';
 import { Role } from '../../common/enums/role.enum';
+import { SupabaseStorageService } from '../../common/services/supabase-storage.service';
 
 @Injectable()
 export class GuestsService {
@@ -24,6 +25,7 @@ export class GuestsService {
     private readonly accompanyingGuestRepository: Repository<AccompanyingGuest>,
     @InjectRepository(GuestAgreement)
     private readonly agreementRepository: Repository<GuestAgreement>,
+    private readonly supabaseStorageService: SupabaseStorageService,
   ) {}
 
   async create(
@@ -272,5 +274,41 @@ export class GuestsService {
       { guestId },
       { pdfPath },
     );
+  }
+
+  // Upload PDF to Supabase Storage
+  async uploadPdfToStorage(
+    guestId: string,
+    fileBuffer: Buffer,
+    fileName: string,
+  ): Promise<{ message: string; pdfUrl: string }> {
+    // Verify guest exists
+    const guest = await this.findOne(guestId);
+    if (!guest) {
+      throw new NotFoundException('Guest not found');
+    }
+
+    // Generate unique filename with timestamp
+    const timestamp = Date.now();
+    const uniqueFileName = `${timestamp}-${fileName}`;
+
+    try {
+      // Upload to Supabase Storage
+      const pdfUrl = await this.supabaseStorageService.uploadPdf(
+        fileBuffer,
+        uniqueFileName,
+        guestId,
+      );
+
+      // Update guest agreement with PDF URL
+      await this.updatePdfPath(guestId, pdfUrl);
+
+      return {
+        message: 'PDF uploaded successfully',
+        pdfUrl,
+      };
+    } catch (error) {
+      throw new Error(`Failed to upload PDF: ${error.message}`);
+    }
   }
 }

@@ -6,6 +6,7 @@ import { Guest } from './entities/guest.entity';
 import { Reservation } from './entities/reservation.entity';
 import { AccompanyingGuest } from './entities/accompanying-guest.entity';
 import { GuestAgreement } from './entities/guest-agreement.entity';
+import { SupabaseStorageService } from '../../common/services/supabase-storage.service';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { GuestAgreement } from './entities/guest-agreement.entity';
     ]),
   ],
   controllers: [GuestsController],
-  providers: [GuestsService],
+  providers: [GuestsService, SupabaseStorageService],
   exports: [GuestsService],
 })
 export class GuestsModule {}

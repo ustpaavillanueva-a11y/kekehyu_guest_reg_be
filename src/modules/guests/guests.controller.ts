@@ -9,13 +9,20 @@ import {
   UseGuards,
   ParseUUIDPipe,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as multer from 'multer';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { GuestsService } from './guests.service';
 import { CreateGuestDto } from './dto/create-guest.dto';
@@ -119,5 +126,50 @@ export class GuestsController {
     @CurrentUser('role') userRole: Role,
   ) {
     return this.guestsService.remove(id, userRole);
+  }
+
+  @Post(':id/upload-pdf')
+  @Roles(Role.FRONT_DESK, Role.SUPER_ADMIN)
+  @UseInterceptors(FileInterceptor('pdf'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        pdf: {
+          type: 'string',
+          format: 'binary',
+          description: 'PDF file to upload',
+        },
+      },
+      required: ['pdf'],
+    },
+  })
+  @ApiOperation({ summary: 'Upload PDF for guest agreement' })
+  @ApiResponse({ status: 200, description: 'PDF uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid file' })
+  @ApiResponse({ status: 404, description: 'Guest not found' })
+  async uploadPdf(
+    @Param('id', ParseUUIDPipe) guestId: string,
+    @UploadedFile() file: multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (file.mimetype !== 'application/pdf') {
+      throw new BadRequestException('Only PDF files are allowed');
+    }
+
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxFileSize) {
+      throw new BadRequestException('File size exceeds 10MB limit');
+    }
+
+    return this.guestsService.uploadPdfToStorage(
+      guestId,
+      file.buffer,
+      file.originalname,
+    );
   }
 }
