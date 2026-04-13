@@ -93,6 +93,39 @@ export class GuestsController {
     return this.guestsService.getGuestsForPeriod(period);
   }
 
+  @Get('monthly-comparison')
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Get monthly guest comparison (This Year vs Last Year)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Monthly comparison data',
+    schema: {
+      example: {
+        months: [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+        ],
+        thisYear: [15, 22, 18, 25, 30, 28, 35, 32, 40, 38, 42, 45],
+        lastYear: [12, 18, 20, 22, 25, 24, 28, 30, 35, 33, 38, 41],
+      },
+    },
+  })
+  async getMonthlyComparison() {
+    return this.guestsService.getMonthlyComparison();
+  }
+
   @Get(':id')
   @Roles(Role.FRONT_DESK, Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get guest by ID' })

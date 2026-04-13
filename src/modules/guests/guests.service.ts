@@ -311,4 +311,81 @@ export class GuestsService {
       throw new Error(`Failed to upload PDF: ${error.message}`);
     }
   }
+
+  // Get monthly comparison data for this year vs last year
+  async getMonthlyComparison(): Promise<{
+    months: string[];
+    thisYear: number[];
+    lastYear: number[];
+  }> {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    const currentYear = new Date().getFullYear(); // 2026
+    const previousYear = currentYear - 1; // 2025
+
+    const thisYear: number[] = [];
+    const lastYear: number[] = [];
+
+    // Count guests for each month
+    for (let month = 1; month <= 12; month++) {
+      // Current year
+      const thisYearStart = new Date(currentYear, month - 1, 1);
+      const thisYearEnd = new Date(currentYear, month, 0, 23, 59, 59);
+
+      const thisYearCount = await this.guestRepository.count({
+        where: {
+          createdAt: MoreThanOrEqual(thisYearStart),
+        },
+      });
+
+      // Filter more precisely using query builder for exact month match
+      const thisYearGuests = await this.guestRepository
+        .createQueryBuilder('guest')
+        .where(
+          'EXTRACT(YEAR FROM guest.createdAt) = :year',
+          { year: currentYear },
+        )
+        .andWhere(
+          'EXTRACT(MONTH FROM guest.createdAt) = :month',
+          { month },
+        )
+        .getCount();
+
+      thisYear.push(thisYearGuests);
+
+      // Previous year
+      const lastYearGuests = await this.guestRepository
+        .createQueryBuilder('guest')
+        .where(
+          'EXTRACT(YEAR FROM guest.createdAt) = :year',
+          { year: previousYear },
+        )
+        .andWhere(
+          'EXTRACT(MONTH FROM guest.createdAt) = :month',
+          { month },
+        )
+        .getCount();
+
+      lastYear.push(lastYearGuests);
+    }
+
+    return {
+      months,
+      thisYear,
+      lastYear,
+    };
+  }
 }
