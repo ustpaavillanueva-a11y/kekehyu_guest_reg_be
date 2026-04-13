@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: guest-registration-api
+    env: node
+    plan: free
+    buildCommand: npm ci --legacy-peer-deps && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "18"
