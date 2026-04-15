@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RoomType } from './entities/room-type.entity';
@@ -6,37 +6,60 @@ import { CreateRoomTypeDto, UpdateRoomTypeDto } from './dto/room-type.dto';
 
 @Injectable()
 export class RoomTypesService {
+  private readonly logger = new Logger(RoomTypesService.name);
+
   constructor(
     @InjectRepository(RoomType)
     private readonly roomTypeRepository: Repository<RoomType>,
   ) {}
 
   async create(createRoomTypeDto: CreateRoomTypeDto): Promise<RoomType> {
-    const roomType = this.roomTypeRepository.create(createRoomTypeDto);
-    return this.roomTypeRepository.save(roomType);
+    try {
+      const roomType = this.roomTypeRepository.create(createRoomTypeDto);
+      return await this.roomTypeRepository.save(roomType);
+    } catch (error) {
+      this.logger.error(`Failed to create room type: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to create room type. Database connection issue.');
+    }
   }
 
   async findAll(): Promise<RoomType[]> {
-    return this.roomTypeRepository.find({
-      order: { name: 'ASC' },
-    });
+    try {
+      return await this.roomTypeRepository.find({
+        order: { name: 'ASC' },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to fetch room types: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to fetch room types. Database connection issue.');
+    }
   }
 
   async findAllActive(): Promise<RoomType[]> {
-    return this.roomTypeRepository.find({
-      where: { isActive: true },
-      order: { name: 'ASC' },
-    });
+    try {
+      return await this.roomTypeRepository.find({
+        where: { isActive: true },
+        order: { name: 'ASC' },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to fetch active room types: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to fetch active room types. Database connection issue.');
+    }
   }
 
   async findOne(id: string): Promise<RoomType> {
-    const roomType = await this.roomTypeRepository.findOne({ where: { id } });
+    try {
+      const roomType = await this.roomTypeRepository.findOne({ where: { id } });
 
-    if (!roomType) {
-      throw new NotFoundException('Room type not found');
+      if (!roomType) {
+        throw new NotFoundException('Room type not found');
+      }
+
+      return roomType;
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      this.logger.error(`Failed to fetch room type: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to fetch room type. Database connection issue.');
     }
-
-    return roomType;
   }
 
   async update(

@@ -33,12 +33,16 @@ async function bootstrap() {
     }),
   );
 
-  // CORS - Allow all origins temporarily for debugging
+  // CORS - Allow frontend origins
   app.enableCors({
-    origin: '*',
-    credentials: false,
+    origin: [
+      'http://localhost:4200',
+      'http://127.0.0.1:4200',
+    ],
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    exposedHeaders: ['Authorization'],
   });
 
   // Swagger setup

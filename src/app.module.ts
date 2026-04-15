@@ -41,7 +41,16 @@ import { RolesGuard } from './common/guards/roles.guard';
         ssl: configService.get('DB_SSL') === 'true' 
           ? { rejectUnauthorized: false }
           : false,
-        logging: false, // Set to true for SQL query debugging
+        logging: configService.get('NODE_ENV') === 'development',
+        // Connection pool and timeout settings
+        connectTimeoutMS: 30000,
+        extra: {
+          connectionTimeoutMillis: 30000,
+          idleTimeoutMillis: 30000,
+          max: 10,
+        },
+        retryAttempts: 3,
+        retryDelay: 3000,
       }),
     }),
 

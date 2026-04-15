@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HotelSetting } from './entities/hotel-setting.entity';
@@ -14,6 +14,8 @@ import {
 
 @Injectable()
 export class HotelSettingsService {
+  private readonly logger = new Logger(HotelSettingsService.name);
+
   constructor(
     @InjectRepository(HotelSetting)
     private readonly settingRepository: Repository<HotelSetting>,
@@ -23,21 +25,26 @@ export class HotelSettingsService {
 
   // Hotel Settings
   async getSettings(): Promise<HotelSetting> {
-    let settings = await this.settingRepository.findOne({ where: {} });
+    try {
+      let settings = await this.settingRepository.findOne({ where: {} });
 
-    if (!settings) {
-      // Create default settings
-      settings = this.settingRepository.create({
-        hotelName: 'Kekehyu Business Hotel',
-        defaultCheckInTime: '14:00',
-        defaultCheckOutTime: '11:00',
-        smokingFee: 5000,
-        corkageFeePercent: 30,
-      });
-      await this.settingRepository.save(settings);
+      if (!settings) {
+        // Create default settings
+        settings = this.settingRepository.create({
+          hotelName: 'Kekehyu Business Hotel',
+          defaultCheckInTime: '14:00',
+          defaultCheckOutTime: '11:00',
+          smokingFee: 5000,
+          corkageFeePercent: 30,
+        });
+        await this.settingRepository.save(settings);
+      }
+
+      return settings;
+    } catch (error) {
+      this.logger.error(`Failed to fetch hotel settings: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to fetch hotel settings. Database connection issue.');
     }
-
-    return settings;
   }
 
   async updateSettings(
@@ -58,16 +65,26 @@ export class HotelSettingsService {
   }
 
   async getAllPolicies(): Promise<PolicyTemplate[]> {
-    return this.policyRepository.find({
-      order: { category: 'ASC', displayOrder: 'ASC' },
-    });
+    try {
+      return await this.policyRepository.find({
+        order: { category: 'ASC', displayOrder: 'ASC' },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to fetch policies: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to fetch policies. Database connection issue.');
+    }
   }
 
   async getActivePolicies(): Promise<PolicyTemplate[]> {
-    return this.policyRepository.find({
-      where: { isActive: true },
-      order: { category: 'ASC', displayOrder: 'ASC' },
-    });
+    try {
+      return await this.policyRepository.find({
+        where: { isActive: true },
+        order: { category: 'ASC', displayOrder: 'ASC' },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to fetch active policies: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('Failed to fetch active policies. Database connection issue.');
+    }
   }
 
   async getPoliciesByCategory(
