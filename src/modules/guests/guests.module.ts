@@ -7,6 +7,7 @@ import { Reservation } from './entities/reservation.entity';
 import { AccompanyingGuest } from './entities/accompanying-guest.entity';
 import { GuestAgreement } from './entities/guest-agreement.entity';
 import { SupabaseStorageService } from '../../common/services/supabase-storage.service';
+import { RoomTypesModule } from '../room-types/room-types.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { SupabaseStorageService } from '../../common/services/supabase-storage.s
       AccompanyingGuest,
       GuestAgreement,
     ]),
+    RoomTypesModule,
   ],
   controllers: [GuestsController],
   providers: [GuestsService, SupabaseStorageService],

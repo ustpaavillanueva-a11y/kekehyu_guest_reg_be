@@ -93,4 +93,51 @@ export class RoomTypesService {
       await this.create(type);
     }
   }
+
+  /**
+   * Resolve room type name to UUID
+   * Case-insensitive lookup
+   * @param roomTypeName - The name of the room type (e.g., "Standard Single")
+   * @returns The room type UUID or null if not found
+   */
+  async resolveRoomTypeId(roomTypeName: string): Promise<string | null> {
+    if (!roomTypeName || roomTypeName.trim() === '') {
+      return null;
+    }
+
+    try {
+      // Case-insensitive search using ILIKE
+      const roomType = await this.roomTypeRepository
+        .createQueryBuilder('roomType')
+        .where('LOWER(roomType.name) = LOWER(:name)', { name: roomTypeName.trim() })
+        .andWhere('roomType.isActive = :isActive', { isActive: true })
+        .getOne();
+
+      if (roomType) {
+        this.logger.log(`Resolved room type "${roomTypeName}" to UUID: ${roomType.id}`);
+        return roomType.id;
+      }
+
+      this.logger.warn(`Room type "${roomTypeName}" not found in database`);
+      return null;
+    } catch (error) {
+      this.logger.error(`Failed to resolve room type: ${error.message}`, error.stack);
+      return null;
+    }
+  }
+
+  /**
+   * Find room type by name (exact match, case-insensitive)
+   */
+  async findByName(name: string): Promise<RoomType | null> {
+    try {
+      return await this.roomTypeRepository
+        .createQueryBuilder('roomType')
+        .where('LOWER(roomType.name) = LOWER(:name)', { name: name.trim() })
+        .getOne();
+    } catch (error) {
+      this.logger.error(`Failed to find room type by name: ${error.message}`, error.stack);
+      return null;
+    }
+  }
 }

@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -39,17 +40,23 @@ export class AccompanyingGuestDto {
 }
 
 export class ReservationDto {
-  @ApiProperty({ example: '8412993383856' })
+  @ApiPropertyOptional({ example: '8412993383856' })
   @IsString()
-  @IsNotEmpty()
-  reservationNumber: string;
+  @IsOptional()
+  reservationNumber?: string;
 
   @ApiProperty({ example: '408' })
   @IsString()
   @IsNotEmpty()
   roomNumber: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'STANDARD SINGLE', description: 'Room type name (will be converted to UUID)' })
+  @IsString()
+  @IsOptional()
+  roomType?: string;
+
+  @ApiPropertyOptional({ description: 'Room type UUID (optional if roomType name is provided)' })
+  @ValidateIf((o) => o.roomTypeId && o.roomTypeId !== '')
   @IsUUID()
   @IsOptional()
   roomTypeId?: string;

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
@@ -13,9 +14,12 @@ import { CreateGuestDto } from './dto/create-guest.dto';
 import { UpdateGuestDto } from './dto/update-guest.dto';
 import { Role } from '../../common/enums/role.enum';
 import { SupabaseStorageService } from '../../common/services/supabase-storage.service';
+import { RoomTypesService } from '../room-types/room-types.service';
 
 @Injectable()
 export class GuestsService {
+  private readonly logger = new Logger(GuestsService.name);
+
   constructor(
     @InjectRepository(Guest)
     private readonly guestRepository: Repository<Guest>,
@@ -26,6 +30,7 @@ export class GuestsService {
     @InjectRepository(GuestAgreement)
     private readonly agreementRepository: Repository<GuestAgreement>,
     private readonly supabaseStorageService: SupabaseStorageService,
+    private readonly roomTypesService: RoomTypesService,
   ) {}
 
   async create(
@@ -38,7 +43,7 @@ export class GuestsService {
       lastName: createGuestDto.lastName,
       middleName: createGuestDto.middleName,
       phoneNumber: createGuestDto.phoneNumber,
-      email: createGuestDto.email,
+      email: createGuestDto.email || undefined, // Handle empty email
       country: createGuestDto.country,
       validIdPresented: createGuestDto.validIdPresented,
       vehiclePlateNo: createGuestDto.vehiclePlateNo,
@@ -49,11 +54,29 @@ export class GuestsService {
 
     // Create reservations
     for (const resDto of createGuestDto.reservations) {
+      // Resolve roomType string to roomTypeId UUID if provided
+      let resolvedRoomTypeId: string | undefined = resDto.roomTypeId;
+      
+      if (!resolvedRoomTypeId && resDto.roomType) {
+        this.logger.log(`Resolving room type: "${resDto.roomType}"`);
+        const resolved = await this.roomTypesService.resolveRoomTypeId(resDto.roomType);
+        resolvedRoomTypeId = resolved || undefined;
+        
+        if (resolvedRoomTypeId) {
+          this.logger.log(`Room type "${resDto.roomType}" resolved to UUID: ${resolvedRoomTypeId}`);
+        } else {
+          this.logger.warn(`Room type "${resDto.roomType}" not found, storing without roomTypeId`);
+        }
+      }
+
+      // Generate reservation number if not provided
+      const reservationNumber = resDto.reservationNumber || this.generateReservationNumber();
+
       const reservation = this.reservationRepository.create({
         guestId: savedGuest.id,
-        reservationNumber: resDto.reservationNumber,
+        reservationNumber,
         roomNumber: resDto.roomNumber,
-        roomTypeId: resDto.roomTypeId,
+        roomTypeId: resolvedRoomTypeId,
         checkInDate: new Date(resDto.checkInDate),
         checkOutDate: resDto.checkOutDate ? new Date(resDto.checkOutDate) : undefined,
         checkInTime: resDto.checkInTime,
@@ -387,5 +410,16 @@ export class GuestsService {
       thisYear,
       lastYear,
     };
+  }
+
+  /**
+   * Generate a unique reservation number
+   * Format: YYYYMMDD-XXXXXX (date + 6 random digits)
+   */
+  private generateReservationNumber(): string {
+    const now = new Date();
+    const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const randomPart = Math.floor(100000 + Math.random() * 900000).toString();
+    return `${datePart}-${randomPart}`;
   }
 }
