@@ -36,13 +36,16 @@ async function bootstrap() {
   // CORS - Allow frontend origins
   app.enableCors({
     origin: [
-      'http://localhost:4200',
-      'http://127.0.0.1:4200',
+      'https://kekehyuguestregistration.vercel.app',  // Production frontend (Vercel)
+      'http://localhost:4200',                         // Development frontend (local)
+      'http://127.0.0.1:4200',                         // Development frontend (local IP)
+      'http://localhost:3000',                         // Development alternative port
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
     exposedHeaders: ['Authorization'],
+    optionsSuccessStatus: 200,
   });
 
   // Swagger setup
