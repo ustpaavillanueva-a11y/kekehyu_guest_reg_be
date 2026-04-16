@@ -4,6 +4,7 @@ import {
   IsEmail,
   IsOptional,
   IsString,
+  IsUrl,
 } from 'class-validator';
 
 export class UpdateGuestDto {
@@ -36,4 +37,14 @@ export class UpdateGuestDto {
   @IsString()
   @IsOptional()
   vehiclePlateNo?: string;
+
+  @ApiPropertyOptional({ example: 'https://storage.example.com/guest-registration.pdf' })
+  @IsString()
+  @IsOptional()
+  pdfUrl?: string;
+
+  @ApiPropertyOptional({ example: 'http://localhost:3000/uploads/Registration_xxx.pdf', description: 'Alias for pdfUrl' })
+  @IsString()
+  @IsOptional()
+  pdfPath?: string;
 }

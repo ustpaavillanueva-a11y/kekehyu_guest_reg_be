@@ -96,30 +96,39 @@ export class RoomTypesService {
 
   /**
    * Resolve room type name to UUID
-   * Case-insensitive lookup
-   * @param roomTypeName - The name of the room type (e.g., "Standard Single")
-   * @returns The room type UUID or null if not found
+   * Case-insensitive lookup, auto-creates if not found
+   * @param roomTypeName - The name of the room type (e.g., "Standard Single" or "JUNIOR EXECUTIVE (KING BED)")
+   * @returns The room type UUID
    */
   async resolveRoomTypeId(roomTypeName: string): Promise<string | null> {
     if (!roomTypeName || roomTypeName.trim() === '') {
       return null;
     }
 
+    const trimmedName = roomTypeName.trim();
+
     try {
-      // Case-insensitive search using ILIKE
-      const roomType = await this.roomTypeRepository
+      // Case-insensitive search using LOWER()
+      let roomType = await this.roomTypeRepository
         .createQueryBuilder('roomType')
-        .where('LOWER(roomType.name) = LOWER(:name)', { name: roomTypeName.trim() })
-        .andWhere('roomType.isActive = :isActive', { isActive: true })
+        .where('LOWER(roomType.name) = LOWER(:name)', { name: trimmedName })
         .getOne();
 
-      if (roomType) {
-        this.logger.log(`Resolved room type "${roomTypeName}" to UUID: ${roomType.id}`);
-        return roomType.id;
+      // If not found, auto-create the room type
+      if (!roomType) {
+        this.logger.log(`Room type "${trimmedName}" not found, creating new one...`);
+        roomType = this.roomTypeRepository.create({
+          name: trimmedName,
+          description: `Auto-created room type: ${trimmedName}`,
+          isActive: true,
+        });
+        await this.roomTypeRepository.save(roomType);
+        this.logger.log(`Created new room type "${trimmedName}" with UUID: ${roomType.id}`);
+      } else {
+        this.logger.log(`Resolved room type "${trimmedName}" to UUID: ${roomType.id}`);
       }
 
-      this.logger.warn(`Room type "${roomTypeName}" not found in database`);
-      return null;
+      return roomType.id;
     } catch (error) {
       this.logger.error(`Failed to resolve room type: ${error.message}`, error.stack);
       return null;

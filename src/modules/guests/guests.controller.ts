@@ -136,8 +136,8 @@ export class GuestsController {
   }
 
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Update guest (Super Admin only)' })
+  @Roles(Role.FRONT_DESK, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update guest' })
   @ApiResponse({ status: 200, description: 'Guest updated' })
   @ApiResponse({ status: 404, description: 'Guest not found' })
   update(

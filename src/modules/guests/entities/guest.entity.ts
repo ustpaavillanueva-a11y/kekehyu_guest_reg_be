@@ -52,6 +52,10 @@ export class Guest {
   @Column({ name: 'vehicle_plate_no', length: 20, nullable: true })
   vehiclePlateNo: string;
 
+  @ApiPropertyOptional()
+  @Column({ name: 'pdf_url', nullable: true })
+  pdfUrl: string;
+
   @ApiProperty()
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

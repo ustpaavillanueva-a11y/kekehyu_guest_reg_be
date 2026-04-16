@@ -173,9 +173,10 @@ export class GuestsService {
   ): Promise<Guest> {
     const guest = await this.findOne(id);
 
-    // Only super admin can update
-    if (userRole !== Role.SUPER_ADMIN) {
-      throw new ForbiddenException('Only Super Admin can update guests');
+    // Handle pdfPath → pdfUrl mapping (frontend sends pdfPath, we store as pdfUrl)
+    if ((updateGuestDto as any).pdfPath && !updateGuestDto.pdfUrl) {
+      updateGuestDto.pdfUrl = (updateGuestDto as any).pdfPath;
+      delete (updateGuestDto as any).pdfPath;
     }
 
     Object.assign(guest, updateGuestDto);
