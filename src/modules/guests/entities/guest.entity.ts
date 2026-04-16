@@ -71,11 +71,13 @@ export class Guest {
   @JoinColumn({ name: 'registered_by' })
   registeredBy: User;
 
+  @ApiProperty({ type: () => [Reservation] })
   @OneToMany(() => Reservation, (reservation) => reservation.guest, {
     cascade: true,
   })
   reservations: Reservation[];
 
+  @ApiProperty()
   @OneToOne(() => GuestAgreement, (agreement) => agreement.guest, {
     cascade: true,
   })

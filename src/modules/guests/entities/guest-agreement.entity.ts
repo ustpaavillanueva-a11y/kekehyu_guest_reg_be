@@ -7,7 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Guest } from './guest.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity('guest_agreements')
 export class GuestAgreement {
@@ -97,6 +97,10 @@ export class GuestAgreement {
   @ApiProperty()
   @Column({ name: 'pdf_path', length: 500, nullable: true })
   pdfPath: string;
+
+  @ApiPropertyOptional({ description: 'Backup room types for PDF fallback (comma-separated)' })
+  @Column({ name: 'room_types_backup', length: 500, nullable: true })
+  roomTypesBackup: string;
 
   @ApiProperty()
   @CreateDateColumn({ name: 'created_at' })

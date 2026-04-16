@@ -143,6 +143,8 @@ export class GuestsService {
   }
 
   async findOne(id: string): Promise<Guest> {
+    this.logger.debug(`Fetching guest with ID: ${id}`);
+    
     const guest = await this.guestRepository.findOne({
       where: { id },
       relations: [
@@ -155,7 +157,17 @@ export class GuestsService {
     });
 
     if (!guest) {
+      this.logger.warn(`Guest not found with ID: ${id}`);
       throw new NotFoundException('Guest not found');
+    }
+
+    // Log roomType info for each reservation
+    if (guest.reservations && guest.reservations.length > 0) {
+      guest.reservations.forEach((res, index) => {
+        this.logger.debug(
+          `Reservation ${index}: roomTypeId=${res.roomTypeId}, roomType=${res.roomType ? res.roomType.name : 'null'}`,
+        );
+      });
     }
 
     if (guest.registeredBy) {

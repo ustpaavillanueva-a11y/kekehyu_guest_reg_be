@@ -38,6 +38,8 @@ import { RolesGuard } from './common/guards/roles.guard';
         database: configService.get('DB_NAME'),
         autoLoadEntities: true,
         synchronize: configService.get('NODE_ENV') === 'development',
+        migrations: ['dist/migrations/*{.ts,.js}'],
+        migrationsRun: true,
         ssl: configService.get('DB_SSL') === 'true' 
           ? { rejectUnauthorized: false }
           : false,

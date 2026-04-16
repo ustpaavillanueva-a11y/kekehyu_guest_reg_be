@@ -163,6 +163,11 @@ export class GuestAgreementDto {
   @IsString()
   @IsOptional()
   remarks?: string;
+
+  @ApiPropertyOptional({ description: 'Backup room types for PDF fallback (comma-separated)' })
+  @IsString()
+  @IsOptional()
+  roomTypesBackup?: string;
 }
 
 export class CreateGuestDto {

@@ -11,7 +11,7 @@ import {
 import { Guest } from './guest.entity';
 import { RoomType } from '../../room-types/entities/room-type.entity';
 import { AccompanyingGuest } from './accompanying-guest.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum ReservationStatus {
   CHECKED_IN = 'checked_in',
@@ -40,9 +40,11 @@ export class Reservation {
   @Column({ name: 'room_number', length: 20 })
   roomNumber: string;
 
+  @ApiPropertyOptional()
   @Column({ name: 'room_type_id', nullable: true })
   roomTypeId: string;
 
+  @ApiPropertyOptional()
   @ManyToOne(() => RoomType, { nullable: true })
   @JoinColumn({ name: 'room_type_id' })
   roomType: RoomType;
