@@ -1,10 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
+import { mkdir } from 'fs/promises';
+import { getLocalUploadsRoot, isLocalMode } from './common/config/runtime-mode';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
   // Root endpoint handler (before global prefix)
   app.use('/', (req, res, next) => {
@@ -32,6 +37,12 @@ async function bootstrap() {
       },
     }),
   );
+
+  if (isLocalMode(configService)) {
+    const uploadsRoot = getLocalUploadsRoot();
+    await mkdir(uploadsRoot, { recursive: true });
+    app.use('/uploads', express.static(uploadsRoot));
+  }
 
   // CORS - Allow frontend origins
   app.enableCors({

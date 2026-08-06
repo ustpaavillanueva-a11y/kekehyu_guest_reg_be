@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { StorageService } from './storage.service';
 
 @Injectable()
-export class SupabaseStorageService {
-  private supabase: SupabaseClient;
+export class SupabaseStorageService implements StorageService {
+  private supabase: SupabaseClient | null = null;
   private bucketName = 'guest-pdfs';
 
   constructor(private configService: ConfigService) {
@@ -12,7 +13,7 @@ export class SupabaseStorageService {
     const supabaseKey = this.configService.get<string>('SUPABASE_KEY') || '';
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase URL and Key are required');
+      return;
     }
 
     this.supabase = createClient(supabaseUrl, supabaseKey);
@@ -30,12 +31,13 @@ export class SupabaseStorageService {
     fileName: string,
     guestId: string,
   ): Promise<string> {
+    const client = this.getClient();
     // Create a unique file path: pdfs/guestId/fileName
     const filePath = `pdfs/${guestId}/${fileName}`;
 
     try {
       // Upload file to Supabase Storage
-      const { data, error } = await this.supabase.storage
+      const { data, error } = await client.storage
         .from(this.bucketName)
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -48,7 +50,7 @@ export class SupabaseStorageService {
       }
 
       // Generate public URL
-      const { data: publicUrlData } = this.supabase.storage
+      const { data: publicUrlData } = client.storage
         .from(this.bucketName)
         .getPublicUrl(data.path);
 
@@ -63,8 +65,9 @@ export class SupabaseStorageService {
    * @param filePath - The full path of the file to delete
    */
   async deletePdf(filePath: string): Promise<void> {
+    const client = this.getClient();
     try {
-      const { error } = await this.supabase.storage
+      const { error } = await client.storage
         .from(this.bucketName)
         .remove([filePath]);
 
@@ -82,10 +85,18 @@ export class SupabaseStorageService {
    * @returns The public URL
    */
   getPublicUrl(filePath: string): string {
-    const { data } = this.supabase.storage
+    const { data } = this.getClient().storage
       .from(this.bucketName)
       .getPublicUrl(filePath);
 
     return data.publicUrl;
+  }
+
+  private getClient(): SupabaseClient {
+    if (!this.supabase) {
+      throw new Error('Supabase URL and Key are required');
+    }
+
+    return this.supabase;
   }
 }

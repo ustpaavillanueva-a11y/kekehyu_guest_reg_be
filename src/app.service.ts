@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  getHello(): string {
-    return 'Hello World!';
+  getApiInfo(): { status: string; message: string; timestamp: string } {
+    return {
+      status: 'ok',
+      message: 'Guest Registration API is running',
+      timestamp: new Date().toISOString(),
+    };
   }
 }

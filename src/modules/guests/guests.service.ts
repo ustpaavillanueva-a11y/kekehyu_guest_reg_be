@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
@@ -13,7 +14,8 @@ import { GuestAgreement } from './entities/guest-agreement.entity';
 import { CreateGuestDto } from './dto/create-guest.dto';
 import { UpdateGuestDto } from './dto/update-guest.dto';
 import { Role } from '../../common/enums/role.enum';
-import { SupabaseStorageService } from '../../common/services/supabase-storage.service';
+import { STORAGE_SERVICE } from '../../common/services';
+import type { StorageService } from '../../common/services';
 import { RoomTypesService } from '../room-types/room-types.service';
 
 @Injectable()
@@ -29,7 +31,8 @@ export class GuestsService {
     private readonly accompanyingGuestRepository: Repository<AccompanyingGuest>,
     @InjectRepository(GuestAgreement)
     private readonly agreementRepository: Repository<GuestAgreement>,
-    private readonly supabaseStorageService: SupabaseStorageService,
+    @Inject(STORAGE_SERVICE)
+    private readonly storageService: StorageService,
     private readonly roomTypesService: RoomTypesService,
   ) {}
 
@@ -330,7 +333,7 @@ export class GuestsService {
 
     try {
       // Upload to Supabase Storage
-      const pdfUrl = await this.supabaseStorageService.uploadPdf(
+      const pdfUrl = await this.storageService.uploadPdf(
         fileBuffer,
         uniqueFileName,
         guestId,

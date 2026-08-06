@@ -1,9 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
+import { mkdir } from 'fs/promises';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import {
+  getLocalDataRoot,
+  getLocalDatabasePath,
+  isLocalMode,
+} from './common/config/runtime-mode';
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -29,31 +35,48 @@ import { RolesGuard } from './common/guards/roles.guard';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DB_HOST'),
-        port: configService.get<number>('DB_PORT') || 5432,
-        username: configService.get('DB_USERNAME'),
-        password: configService.get('DB_PASSWORD'),
-        database: configService.get('DB_NAME'),
-        autoLoadEntities: true,
-        synchronize: configService.get('NODE_ENV') === 'development',
-        migrations: ['dist/migrations/*{.ts,.js}'],
-        migrationsRun: true,
-        ssl: configService.get('DB_SSL') === 'true' 
-          ? { rejectUnauthorized: false }
-          : false,
-        logging: configService.get('NODE_ENV') === 'development',
-        // Connection pool and timeout settings
-        connectTimeoutMS: 30000,
-        extra: {
-          connectionTimeoutMillis: 30000,
-          idleTimeoutMillis: 30000,
-          max: 10,
-        },
-        retryAttempts: 3,
-        retryDelay: 3000,
-      }),
+      useFactory: async (
+        configService: ConfigService,
+      ): Promise<TypeOrmModuleOptions> => {
+        if (isLocalMode(configService)) {
+          await mkdir(getLocalDataRoot(), { recursive: true });
+
+          return {
+            type: 'sqljs' as const,
+            location: getLocalDatabasePath(),
+            autoSave: true,
+            autoLoadEntities: true,
+            synchronize: true,
+            logging: false,
+          };
+        }
+
+        return {
+          type: 'postgres' as const,
+          host: configService.get('DB_HOST'),
+          port: configService.get<number>('DB_PORT') || 5432,
+          username: configService.get('DB_USERNAME'),
+          password: configService.get<string>('DB_PASSWORD'),
+          database: configService.get<string>('DB_NAME'),
+          autoLoadEntities: true,
+          synchronize: configService.get('NODE_ENV') === 'development',
+          migrations: ['dist/migrations/*{.ts,.js}'],
+          migrationsRun: true,
+          ssl:
+            configService.get('DB_SSL') === 'true'
+              ? { rejectUnauthorized: false }
+              : false,
+          logging: configService.get('NODE_ENV') === 'development',
+          connectTimeoutMS: 30000,
+          extra: {
+            connectionTimeoutMillis: 30000,
+            idleTimeoutMillis: 30000,
+            max: 10,
+          },
+          retryAttempts: 3,
+          retryDelay: 3000,
+        };
+      },
     }),
 
     // Feature Modules

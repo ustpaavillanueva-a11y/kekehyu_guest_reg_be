@@ -24,19 +24,17 @@ export class HotelSetting {
   logoPath: string;
 
   @ApiProperty()
-  @Column({ name: 'default_check_in_time', type: 'time', default: '14:00' })
+  @Column({ name: 'default_check_in_time', type: 'text', default: '14:00' })
   defaultCheckInTime: string;
 
   @ApiProperty()
-  @Column({ name: 'default_check_out_time', type: 'time', default: '11:00' })
+  @Column({ name: 'default_check_out_time', type: 'text', default: '11:00' })
   defaultCheckOutTime: string;
 
   @ApiProperty()
   @Column({
     name: 'smoking_fee',
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
+    type: 'float',
     default: 5000,
   })
   smokingFee: number;

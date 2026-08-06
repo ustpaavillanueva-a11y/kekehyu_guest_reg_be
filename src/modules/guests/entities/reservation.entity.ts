@@ -50,24 +50,24 @@ export class Reservation {
   roomType: RoomType;
 
   @ApiProperty()
-  @Column({ name: 'check_in_date', type: 'date' })
+  @Column({ name: 'check_in_date', type: 'datetime' })
   checkInDate: Date;
 
   @ApiProperty()
-  @Column({ name: 'check_out_date', type: 'date', nullable: true })
+  @Column({ name: 'check_out_date', type: 'datetime', nullable: true })
   checkOutDate: Date;
 
   @ApiProperty()
-  @Column({ name: 'check_in_time', type: 'time', nullable: true })
+  @Column({ name: 'check_in_time', type: 'text', nullable: true })
   checkInTime: string;
 
   @ApiProperty()
-  @Column({ name: 'check_out_time', type: 'time', nullable: true })
+  @Column({ name: 'check_out_time', type: 'text', nullable: true })
   checkOutTime: string;
 
   @ApiProperty({ enum: ReservationStatus })
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: ReservationStatus,
     default: ReservationStatus.CHECKED_IN,
   })

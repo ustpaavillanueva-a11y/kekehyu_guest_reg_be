@@ -21,7 +21,7 @@ export class PolicyTemplate {
 
   @ApiProperty({ enum: PolicyCategory })
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: PolicyCategory,
   })
   category: PolicyCategory;
