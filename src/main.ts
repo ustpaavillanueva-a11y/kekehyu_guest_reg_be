@@ -44,14 +44,20 @@ async function bootstrap() {
     app.use('/uploads', express.static(uploadsRoot));
   }
 
-  // CORS - Allow frontend origins
+  // CORS - Allow frontend origins (override/extend via ALLOWED_ORIGINS, comma-separated)
+  const defaultOrigins = [
+    'https://kekehyuguestregistration.vercel.app', // Production frontend (Vercel)
+    'http://localhost:4200', // Development frontend (local)
+    'http://127.0.0.1:4200', // Development frontend (local IP)
+    'http://localhost:3000', // Development alternative port
+  ];
+  const extraOrigins = (configService.get<string>('ALLOWED_ORIGINS') || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: [
-      'https://kekehyuguestregistration.vercel.app',  // Production frontend (Vercel)
-      'http://localhost:4200',                         // Development frontend (local)
-      'http://127.0.0.1:4200',                         // Development frontend (local IP)
-      'http://localhost:3000',                         // Development alternative port
-    ],
+    origin: [...new Set([...defaultOrigins, ...extraOrigins])],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
