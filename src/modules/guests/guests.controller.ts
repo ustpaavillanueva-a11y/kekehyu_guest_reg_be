@@ -126,6 +126,21 @@ export class GuestsController {
     return this.guestsService.getMonthlyComparison();
   }
 
+  @Get('booking-analytics')
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get booking analytics (Admin/Super Admin)' })
+  @ApiQuery({
+    name: 'period',
+    enum: ['today', 'week', 'month', 'year'],
+    required: false,
+  })
+  @ApiResponse({ status: 200, description: 'Booking analytics data' })
+  getBookingAnalytics(
+    @Query('period') period: 'today' | 'week' | 'month' | 'year' = 'today',
+  ) {
+    return this.guestsService.getBookingAnalytics(period);
+  }
+
   @Get(':id')
   @Roles(Role.FRONT_DESK, Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get guest by ID' })

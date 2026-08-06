@@ -44,6 +44,10 @@ export class HotelSetting {
   corkageFeePercent: number;
 
   @ApiProperty()
+  @Column({ name: 'total_rooms', default: 0 })
+  totalRooms: number;
+
+  @ApiProperty()
   @Column({ type: 'text', nullable: true })
   address: string;
 

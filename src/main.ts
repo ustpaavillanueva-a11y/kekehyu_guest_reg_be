@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
 import { mkdir } from 'fs/promises';
 import { getLocalUploadsRoot, isLocalMode } from './common/config/runtime-mode';
+import { getAllowedOrigins } from './common/config/cors-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -45,19 +46,8 @@ async function bootstrap() {
   }
 
   // CORS - Allow frontend origins (override/extend via ALLOWED_ORIGINS, comma-separated)
-  const defaultOrigins = [
-    'https://kekehyuguestregistration.vercel.app', // Production frontend (Vercel)
-    'http://localhost:4200', // Development frontend (local)
-    'http://127.0.0.1:4200', // Development frontend (local IP)
-    'http://localhost:3000', // Development alternative port
-  ];
-  const extraOrigins = (configService.get<string>('ALLOWED_ORIGINS') || '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
   app.enableCors({
-    origin: [...new Set([...defaultOrigins, ...extraOrigins])],
+    origin: getAllowedOrigins(configService),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],

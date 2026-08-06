@@ -14,6 +14,7 @@ import {
 } from '../../common/services';
 import { isLocalMode } from '../../common/config/runtime-mode';
 import { RoomTypesModule } from '../room-types/room-types.module';
+import { HotelSettingsModule } from '../hotel-settings/hotel-settings.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { RoomTypesModule } from '../room-types/room-types.module';
       GuestAgreement,
     ]),
     RoomTypesModule,
+    HotelSettingsModule,
   ],
   controllers: [GuestsController],
   providers: [
