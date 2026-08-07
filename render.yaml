@@ -1,13 +1,12 @@
 services:
   - type: web
     name: guest-registration-api
-    env: node
+    runtime: node
     plan: free
     buildCommand: npm install && npm run build
-    startCommand: npm run start:prod
+    startCommand: node --max-old-space-size=450 dist/main
     envVars:
       - key: NODE_ENV
         value: production
-        startOnly: true
       - key: NODE_VERSION
-        value: "18"
+        value: "20"
