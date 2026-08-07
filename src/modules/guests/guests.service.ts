@@ -3,9 +3,11 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Repository, MoreThanOrEqual, Between } from 'typeorm';
 import { Guest } from './entities/guest.entity';
 import { Reservation, ReservationStatus } from './entities/reservation.entity';
 import { AccompanyingGuest } from './entities/accompanying-guest.entity';
@@ -13,8 +15,11 @@ import { GuestAgreement } from './entities/guest-agreement.entity';
 import { CreateGuestDto } from './dto/create-guest.dto';
 import { UpdateGuestDto } from './dto/update-guest.dto';
 import { Role } from '../../common/enums/role.enum';
-import { SupabaseStorageService } from '../../common/services/supabase-storage.service';
+import { STORAGE_SERVICE } from '../../common/services';
+import type { StorageService } from '../../common/services';
 import { RoomTypesService } from '../room-types/room-types.service';
+import { HotelSettingsService } from '../hotel-settings/hotel-settings.service';
+import { computeForecast, MonthlyCount } from './utils/forecast.util';
 
 @Injectable()
 export class GuestsService {
@@ -29,8 +34,11 @@ export class GuestsService {
     private readonly accompanyingGuestRepository: Repository<AccompanyingGuest>,
     @InjectRepository(GuestAgreement)
     private readonly agreementRepository: Repository<GuestAgreement>,
-    private readonly supabaseStorageService: SupabaseStorageService,
+    @Inject(STORAGE_SERVICE)
+    private readonly storageService: StorageService,
     private readonly roomTypesService: RoomTypesService,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly hotelSettingsService: HotelSettingsService,
   ) {}
 
   async create(
@@ -110,7 +118,9 @@ export class GuestsService {
     });
     await this.agreementRepository.save(agreement);
 
-    return this.findOne(savedGuest.id);
+    const createdGuest = await this.findOne(savedGuest.id);
+    this.eventEmitter.emit('guest.created', { id: createdGuest.id });
+    return createdGuest;
   }
 
   async findAll(
@@ -194,7 +204,9 @@ export class GuestsService {
     Object.assign(guest, updateGuestDto);
     await this.guestRepository.save(guest);
 
-    return this.findOne(id);
+    const updated = await this.findOne(id);
+    this.eventEmitter.emit('guest.updated', { id: updated.id });
+    return updated;
   }
 
   async remove(id: string, userRole: Role): Promise<void> {
@@ -204,6 +216,7 @@ export class GuestsService {
 
     const guest = await this.findOne(id);
     await this.guestRepository.remove(guest);
+    this.eventEmitter.emit('guest.deleted', { id });
   }
 
   // Statistics for dashboard
@@ -330,7 +343,7 @@ export class GuestsService {
 
     try {
       // Upload to Supabase Storage
-      const pdfUrl = await this.supabaseStorageService.uploadPdf(
+      const pdfUrl = await this.storageService.uploadPdf(
         fileBuffer,
         uniqueFileName,
         guestId,
@@ -375,45 +388,24 @@ export class GuestsService {
     const thisYear: number[] = [];
     const lastYear: number[] = [];
 
-    // Count guests for each month
+    // Count guests for each month using portable date-range filters
+    // (avoid DB-specific functions like Postgres' EXTRACT(), which sql.js/SQLite doesn't support)
     for (let month = 1; month <= 12; month++) {
-      // Current year
       const thisYearStart = new Date(currentYear, month - 1, 1);
-      const thisYearEnd = new Date(currentYear, month, 0, 23, 59, 59);
+      const thisYearEnd = new Date(currentYear, month, 0, 23, 59, 59, 999);
 
-      const thisYearCount = await this.guestRepository.count({
-        where: {
-          createdAt: MoreThanOrEqual(thisYearStart),
-        },
+      const thisYearGuests = await this.guestRepository.count({
+        where: { createdAt: Between(thisYearStart, thisYearEnd) },
       });
-
-      // Filter more precisely using query builder for exact month match
-      const thisYearGuests = await this.guestRepository
-        .createQueryBuilder('guest')
-        .where(
-          'EXTRACT(YEAR FROM guest.createdAt) = :year',
-          { year: currentYear },
-        )
-        .andWhere(
-          'EXTRACT(MONTH FROM guest.createdAt) = :month',
-          { month },
-        )
-        .getCount();
 
       thisYear.push(thisYearGuests);
 
-      // Previous year
-      const lastYearGuests = await this.guestRepository
-        .createQueryBuilder('guest')
-        .where(
-          'EXTRACT(YEAR FROM guest.createdAt) = :year',
-          { year: previousYear },
-        )
-        .andWhere(
-          'EXTRACT(MONTH FROM guest.createdAt) = :month',
-          { month },
-        )
-        .getCount();
+      const lastYearStart = new Date(previousYear, month - 1, 1);
+      const lastYearEnd = new Date(previousYear, month, 0, 23, 59, 59, 999);
+
+      const lastYearGuests = await this.guestRepository.count({
+        where: { createdAt: Between(lastYearStart, lastYearEnd) },
+      });
 
       lastYear.push(lastYearGuests);
     }
@@ -422,6 +414,113 @@ export class GuestsService {
       months,
       thisYear,
       lastYear,
+    };
+  }
+
+  private static readonly DAY_NAMES = [
+    'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+  ];
+  private static readonly MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+
+  // Booking analytics: occupancy, peak days/months, avg length of stay,
+  // cancellation rate, and a statistical forecast. All computed in JS from a
+  // single `find()` (small per-hotel dataset) to stay consistent with the
+  // rest of this file's DB-portability approach (no raw SQL/date functions).
+  async getBookingAnalytics(period: 'today' | 'week' | 'month' | 'year') {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (period) {
+      case 'today':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'week': {
+        const dayOfWeek = now.getDay();
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+        break;
+      }
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+    }
+    const endDate = now;
+
+    const all = await this.reservationRepository.find();
+
+    const inPeriod = all.filter(
+      (r) => r.checkInDate >= startDate && r.checkInDate <= endDate,
+    );
+
+    const totalReservations = inPeriod.length;
+    const cancelledReservations = inPeriod.filter(
+      (r) => r.status === ReservationStatus.CANCELLED,
+    ).length;
+    const cancellationRatePercent = totalReservations
+      ? (cancelledReservations / totalReservations) * 100
+      : 0;
+
+    const effectiveCheckOut = (r: Reservation): Date =>
+      r.checkOutDate ?? new Date(r.checkInDate.getTime() + 24 * 60 * 60 * 1000);
+    const nightsBetween = (from: Date, to: Date): number =>
+      Math.max(0, (to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000));
+
+    const avgLengthOfStayDays = totalReservations
+      ? inPeriod.reduce(
+          (sum, r) => sum + Math.max(1, nightsBetween(r.checkInDate, effectiveCheckOut(r))),
+          0,
+        ) / totalReservations
+      : null;
+
+    const { totalRooms } = await this.hotelSettingsService.getSettings();
+    let occupancyRatePercent: number | null = null;
+    if (totalRooms > 0) {
+      const occupiedRoomNights = all.reduce((sum, r) => {
+        const overlapStart = r.checkInDate > startDate ? r.checkInDate : startDate;
+        const checkOut = effectiveCheckOut(r);
+        const overlapEnd = checkOut < endDate ? checkOut : endDate;
+        return sum + nightsBetween(overlapStart, overlapEnd);
+      }, 0);
+      const availableRoomNights = totalRooms * Math.max(1, nightsBetween(startDate, endDate));
+      occupancyRatePercent = Math.max(0, (occupiedRoomNights / availableRoomNights) * 100);
+    }
+
+    // All-time (not period-filtered) — "which day/month is typically busiest"
+    const dayOfWeekCounts = new Array(7).fill(0);
+    const monthCounts = new Array(12).fill(0);
+    for (const r of all) {
+      dayOfWeekCounts[r.checkInDate.getDay()]++;
+      monthCounts[r.checkInDate.getMonth()]++;
+    }
+    const peakDayOfWeek = GuestsService.DAY_NAMES.map((day, i) => ({ day, count: dayOfWeekCounts[i] }));
+    const peakMonth = GuestsService.MONTH_NAMES.map((month, i) => ({ month, count: monthCounts[i] }));
+
+    const monthlyMap = new Map<string, number>();
+    for (const r of all) {
+      const key = `${r.checkInDate.getFullYear()}-${String(r.checkInDate.getMonth() + 1).padStart(2, '0')}`;
+      monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + 1);
+    }
+    const monthlySeries: MonthlyCount[] = Array.from(monthlyMap.entries())
+      .map(([yearMonth, count]) => ({ yearMonth, count }))
+      .sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
+    const forecast = computeForecast(monthlySeries, 6);
+
+    return {
+      period,
+      totalReservations,
+      cancelledReservations,
+      cancellationRatePercent,
+      avgLengthOfStayDays,
+      occupancyRatePercent,
+      totalRooms,
+      peakDayOfWeek,
+      peakMonth,
+      forecast,
     };
   }
 

@@ -1,10 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
+import { mkdir } from 'fs/promises';
+import { getLocalUploadsRoot, isLocalMode } from './common/config/runtime-mode';
+import { getAllowedOrigins } from './common/config/cors-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
   // Root endpoint handler (before global prefix)
   app.use('/', (req, res, next) => {
@@ -33,14 +39,15 @@ async function bootstrap() {
     }),
   );
 
-  // CORS - Allow frontend origins
+  if (isLocalMode(configService)) {
+    const uploadsRoot = getLocalUploadsRoot();
+    await mkdir(uploadsRoot, { recursive: true });
+    app.use('/uploads', express.static(uploadsRoot));
+  }
+
+  // CORS - Allow frontend origins (override/extend via ALLOWED_ORIGINS, comma-separated)
   app.enableCors({
-    origin: [
-      'https://kekehyuguestregistration.vercel.app',  // Production frontend (Vercel)
-      'http://localhost:4200',                         // Development frontend (local)
-      'http://127.0.0.1:4200',                         // Development frontend (local IP)
-      'http://localhost:3000',                         // Development alternative port
-    ],
+    origin: getAllowedOrigins(configService),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],

@@ -35,7 +35,7 @@ export class User {
 
   @ApiProperty({ enum: Role, description: 'User role' })
   @Column({
-    type: 'enum',
+    type: 'simple-enum',
     enum: Role,
     default: Role.FRONT_DESK,
   })

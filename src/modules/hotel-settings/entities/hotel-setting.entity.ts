@@ -24,19 +24,17 @@ export class HotelSetting {
   logoPath: string;
 
   @ApiProperty()
-  @Column({ name: 'default_check_in_time', type: 'time', default: '14:00' })
+  @Column({ name: 'default_check_in_time', type: 'text', default: '14:00' })
   defaultCheckInTime: string;
 
   @ApiProperty()
-  @Column({ name: 'default_check_out_time', type: 'time', default: '11:00' })
+  @Column({ name: 'default_check_out_time', type: 'text', default: '11:00' })
   defaultCheckOutTime: string;
 
   @ApiProperty()
   @Column({
     name: 'smoking_fee',
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
+    type: 'float',
     default: 5000,
   })
   smokingFee: number;
@@ -44,6 +42,10 @@ export class HotelSetting {
   @ApiProperty()
   @Column({ name: 'corkage_fee_percent', default: 30 })
   corkageFeePercent: number;
+
+  @ApiProperty()
+  @Column({ name: 'total_rooms', default: 0 })
+  totalRooms: number;
 
   @ApiProperty()
   @Column({ type: 'text', nullable: true })

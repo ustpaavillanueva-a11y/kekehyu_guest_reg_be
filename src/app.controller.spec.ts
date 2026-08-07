@@ -14,9 +14,12 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('getApiInfo', () => {
+    it('should return API status info', () => {
+      const result = appController.getApiInfo();
+      expect(result.status).toBe('ok');
+      expect(result.message).toBe('Guest Registration API is running');
+      expect(typeof result.timestamp).toBe('string');
     });
   });
 });

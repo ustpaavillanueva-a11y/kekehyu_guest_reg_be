@@ -40,6 +40,11 @@ export class UpdateHotelSettingDto {
   @IsOptional()
   corkageFeePercent?: number;
 
+  @ApiPropertyOptional({ example: 20 })
+  @IsNumber()
+  @IsOptional()
+  totalRooms?: number;
+
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository, Between, MoreThanOrEqual } from 'typeorm';
 import { UserSession } from './entities/user-session.entity';
 
@@ -8,6 +9,7 @@ export class SessionsService {
   constructor(
     @InjectRepository(UserSession)
     private readonly sessionRepository: Repository<UserSession>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async createSession(
@@ -23,7 +25,9 @@ export class SessionsService {
       isActive: true,
     });
 
-    return this.sessionRepository.save(session);
+    const saved = await this.sessionRepository.save(session);
+    this.eventEmitter.emit('session.changed', { userId, type: 'login' });
+    return saved;
   }
 
   async endSession(sessionId: string): Promise<UserSession | null> {
@@ -42,7 +46,9 @@ export class SessionsService {
     session.durationMinutes = durationMinutes;
     session.isActive = false;
 
-    return this.sessionRepository.save(session);
+    const saved = await this.sessionRepository.save(session);
+    this.eventEmitter.emit('session.changed', { userId: saved.userId, type: 'logout' });
+    return saved;
   }
 
   async endAllUserSessions(userId: string): Promise<void> {
