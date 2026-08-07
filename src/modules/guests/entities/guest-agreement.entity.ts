@@ -78,7 +78,7 @@ export class GuestAgreement {
   guestSignature: string;
 
   @ApiProperty()
-  @Column({ name: 'signature_date', type: 'datetime' })
+  @Column({ name: 'signature_date', type: 'date' })
   signatureDate: Date;
 
   // Front desk

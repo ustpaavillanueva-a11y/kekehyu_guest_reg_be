@@ -23,11 +23,11 @@ export class UserSession {
   user: User;
 
   @ApiProperty()
-  @Column({ name: 'login_at', type: 'datetime' })
+  @Column({ name: 'login_at' })
   loginAt: Date;
 
   @ApiProperty()
-  @Column({ name: 'logout_at', type: 'datetime', nullable: true })
+  @Column({ name: 'logout_at', nullable: true })
   logoutAt: Date;
 
   @ApiProperty()

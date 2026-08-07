@@ -50,11 +50,11 @@ export class Reservation {
   roomType: RoomType;
 
   @ApiProperty()
-  @Column({ name: 'check_in_date', type: 'datetime' })
+  @Column({ name: 'check_in_date', type: 'date' })
   checkInDate: Date;
 
   @ApiProperty()
-  @Column({ name: 'check_out_date', type: 'datetime', nullable: true })
+  @Column({ name: 'check_out_date', type: 'date', nullable: true })
   checkOutDate: Date;
 
   @ApiProperty()

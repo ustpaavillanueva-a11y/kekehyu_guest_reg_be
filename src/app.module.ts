@@ -32,6 +32,9 @@ import { RolesGuard } from './common/guards/roles.guard';
       envFilePath: '.env',
     }),
 
+    // Event Emitter - powers realtime gateway updates
+    EventEmitterModule.forRoot(),
+
     // Database - Supabase PostgreSQL
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
