@@ -19,6 +19,7 @@ import { GuestsModule } from './modules/guests/guests.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { RoomTypesModule } from './modules/room-types/room-types.module';
 import { HotelSettingsModule } from './modules/hotel-settings/hotel-settings.module';
+import { TempUploadsModule } from './modules/temp-uploads/temp-uploads.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -90,6 +91,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     SessionsModule,
     RoomTypesModule,
     HotelSettingsModule,
+    TempUploadsModule,
   ],
   controllers: [AppController],
   providers: [
