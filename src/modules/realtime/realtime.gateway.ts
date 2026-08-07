@@ -9,7 +9,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { getAllowedOrigins } from '../../common/config/cors-origins';
+import { isOriginAllowed } from '../../common/config/cors-origins';
 
 interface GuestEventPayload {
   id: string;
@@ -41,7 +41,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   handleConnection(client: Socket): void {
     const origin = client.handshake.headers.origin;
-    if (origin && !getAllowedOrigins(this.configService).includes(origin)) {
+    if (origin && !isOriginAllowed(origin, this.configService)) {
       client.disconnect(true);
       return;
     }

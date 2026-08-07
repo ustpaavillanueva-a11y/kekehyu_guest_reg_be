@@ -6,7 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
 import { mkdir } from 'fs/promises';
 import { getLocalUploadsRoot, isLocalMode } from './common/config/runtime-mode';
-import { getAllowedOrigins } from './common/config/cors-origins';
+import { isOriginAllowed } from './common/config/cors-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -47,7 +47,13 @@ async function bootstrap() {
 
   // CORS - Allow frontend origins (override/extend via ALLOWED_ORIGINS, comma-separated)
   app.enableCors({
-    origin: getAllowedOrigins(configService),
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin || isOriginAllowed(origin, configService)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`), false);
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
