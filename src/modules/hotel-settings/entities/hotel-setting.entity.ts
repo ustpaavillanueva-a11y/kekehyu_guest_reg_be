@@ -64,7 +64,7 @@ export class HotelSetting {
   @Column({ name: 'updated_by', nullable: true })
   updatedById: string;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'updated_by' })
   updatedBy: User;
 }

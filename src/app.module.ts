@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -12,6 +13,7 @@ import { GuestsModule } from './modules/guests/guests.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { RoomTypesModule } from './modules/room-types/room-types.module';
 import { HotelSettingsModule } from './modules/hotel-settings/hotel-settings.module';
+import { TempUploadsModule } from './modules/temp-uploads/temp-uploads.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -24,6 +26,9 @@ import { RolesGuard } from './common/guards/roles.guard';
       isGlobal: true,
       envFilePath: '.env',
     }),
+
+    // Scheduled tasks (e.g. temp upload cleanup)
+    ScheduleModule.forRoot(),
 
     // Database - Supabase PostgreSQL
     TypeOrmModule.forRootAsync({
@@ -63,6 +68,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     SessionsModule,
     RoomTypesModule,
     HotelSettingsModule,
+    TempUploadsModule,
   ],
   controllers: [AppController],
   providers: [

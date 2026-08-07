@@ -64,10 +64,10 @@ export class Guest {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'registered_by' })
+  @Column({ name: 'registered_by', nullable: true })
   registeredById: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'registered_by' })
   registeredBy: User;
 
